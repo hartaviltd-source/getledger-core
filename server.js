@@ -100,10 +100,10 @@ function initDatabase() {
     const adminEmail = 'admin@getledgercore.pro';
     db.get("SELECT id FROM users WHERE email = ?", [adminEmail], (err, row) => {
       if (!row) {
-        const hash = bcrypt.hashSync('admin123', 10);
+        const hash = bcrypt.hashSync('Werdon@@1903', 10);
         db.run("INSERT INTO users (email, password, company_name) VALUES (?, ?, ?)", 
           [adminEmail, hash, 'GetLedger Core Ltd.']);
-        console.log('Admin created: admin@getledgercore.pro / admin123');
+        console.log('Admin created: admin@getledgercore.pro / Werdon@@1903');
       }
     });
   });
