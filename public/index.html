@@ -506,11 +506,30 @@
             <h1>Paraşüt</h1>
             <p>Ön Muhasebe Programı</p>
         </div>
-        <form id="loginForm">
+        
+        <!-- Login Form -->
+        <form id="loginForm" style="display: block;">
             <input type="email" id="loginEmail" class="login-input" placeholder="E-posta adresiniz" value="admin@getledgercore.pro">
             <input type="password" id="loginPassword" class="login-input" placeholder="Şifreniz" value="admin123">
             <button type="submit" class="login-btn">Giriş Yap</button>
+            <p style="text-align: center; margin-top: 16px; color: #666; font-size: 14px;">
+                Hesabınız yok mu? <a href="#" onclick="showRegisterForm(); return false;" style="color: #ff6b35; font-weight: 600; text-decoration: none;">Kayıt Olun</a>
+            </p>
         </form>
+        
+        <!-- Register Form -->
+        <form id="registerForm" style="display: none;">
+            <input type="text" id="registerCompany" class="login-input" placeholder="Şirket Adı">
+            <input type="email" id="registerEmail" class="login-input" placeholder="E-posta adresiniz">
+            <input type="password" id="registerPassword" class="login-input" placeholder="Şifre (min. 6 karakter)">
+            <input type="password" id="registerPasswordConfirm" class="login-input" placeholder="Şifre Tekrar">
+            <button type="submit" class="login-btn">Kayıt Ol</button>
+            <p style="text-align: center; margin-top: 16px; color: #666; font-size: 14px;">
+                Zaten hesabınız var mı? <a href="#" onclick="showLoginForm(); return false;" style="color: #ff6b35; font-weight: 600; text-decoration: none;">Giriş Yapın</a>
+            </p>
+        </form>
+        
+        <p id="authError" style="margin-top: 16px; color: #ef4444; text-align: center; font-size: 14px; display: none;"></p>
     </div>
 </div>
 
@@ -747,15 +766,100 @@
 </div>
 
 <script>
-// Auth
-document.getElementById('loginForm').onsubmit = function(e) {
+const API_URL = '';
+
+// Show/Hide Forms
+function showRegisterForm() {
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('registerForm').style.display = 'block';
+    document.getElementById('authError').style.display = 'none';
+}
+
+function showLoginForm() {
+    document.getElementById('registerForm').style.display = 'none';
+    document.getElementById('loginForm').style.display = 'block';
+    document.getElementById('authError').style.display = 'none';
+}
+
+// Login
+document.getElementById('loginForm').onsubmit = async function(e) {
     e.preventDefault();
-    document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('app').style.display = 'block';
-    loadData();
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+    const errorEl = document.getElementById('authError');
+    
+    try {
+        const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+        
+        const data = await res.json();
+        
+        if (data.token) {
+            localStorage.setItem('token', data.token);
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('app').style.display = 'block';
+            loadData();
+        } else {
+            errorEl.textContent = data.error || 'Giriş başarısız';
+            errorEl.style.display = 'block';
+        }
+    } catch (err) {
+        errorEl.textContent = 'Bağlantı hatası';
+        errorEl.style.display = 'block';
+    }
+};
+
+// Register
+document.getElementById('registerForm').onsubmit = async function(e) {
+    e.preventDefault();
+    const company = document.getElementById('registerCompany').value;
+    const email = document.getElementById('registerEmail').value;
+    const password = document.getElementById('registerPassword').value;
+    const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
+    const errorEl = document.getElementById('authError');
+    
+    // Validation
+    if (password !== passwordConfirm) {
+        errorEl.textContent = 'Şifreler eşleşmiyor';
+        errorEl.style.display = 'block';
+        return;
+    }
+    
+    if (password.length < 6) {
+        errorEl.textContent = 'Şifre en az 6 karakter olmalı';
+        errorEl.style.display = 'block';
+        return;
+    }
+    
+    try {
+        const res = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password, company_name: company })
+        });
+        
+        const data = await res.json();
+        
+        if (data.token) {
+            localStorage.setItem('token', data.token);
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('app').style.display = 'block';
+            loadData();
+        } else {
+            errorEl.textContent = data.error || 'Kayıt başarısız';
+            errorEl.style.display = 'block';
+        }
+    } catch (err) {
+        errorEl.textContent = 'Bağlantı hatası';
+        errorEl.style.display = 'block';
+    }
 };
 
 function logout() {
+    localStorage.removeItem('token');
     location.reload();
 }
 
